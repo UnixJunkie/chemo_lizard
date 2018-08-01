@@ -27,7 +27,8 @@ def main():
     input_smi = sys.argv[1]
     output_csv = sys.argv[2]
     output = open(output_csv, 'w')
-    output.write("#logP molMR molW nbA nbD nbRotB TPSA countedAtomPairs...\n")
+    output.write(
+        "#molName logP molMR molW nbA nbD nbRotB TPSA countedAtomPairs...\n")
     for name, mol in RobustSmilesMolSupplier(input_smi):
         if mol is None:
             continue
@@ -39,8 +40,8 @@ def main():
         nbRotB = Descriptors.NumRotatableBonds(mol)
         tpsa = Descriptors.TPSA(mol)
         # FBR: TODO append counted atom pairs
-        output.write("0:%f 1:%f 2:%f 3:%d 4:%d 5:%d 6:%f" %
-                     (logP, molMR, molW, nbA, nbD, nbRotB, tpsa))
+        output.write("%s 0:%f 1:%f 2:%f 3:%d 4:%d 5:%d 6:%f" %
+                     (name, logP, molMR, molW, nbA, nbD, nbRotB, tpsa))
         offset = 7
         countedFp = Pairs.GetAtomPairFingerprint(mol)
         countedFp = countedFp.GetNonzeroElements()
