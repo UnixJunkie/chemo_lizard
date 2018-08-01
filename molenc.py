@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# encode molecules from a SMILES file to a CSV files with
+# encode molecules from a SMILES file to a .csr file containing
 # a few molecular descriptors
 
 from __future__ import print_function
@@ -9,6 +9,7 @@ import rdkit
 import sys
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
+from rdkit.Chem.AtomPairs import Pairs
 
 def RobustSmilesMolSupplier(filename):
     with open(filename) as f:
@@ -19,14 +20,14 @@ def RobustSmilesMolSupplier(filename):
             yield (name, Chem.MolFromSmiles(smile))
 
 if len(sys.argv) != 3:
-    print("usage: %s input.smi output.csv" % sys.argv[0])
+    print("usage: %s input.smi output.csr" % sys.argv[0])
     sys.exit(1)
 
 def main():
     input_smi = sys.argv[1]
     output_csv = sys.argv[2]
     output = open(output_csv, 'w')
-    output.write("#logP\tmolMR\tmolW\tnbA\tnbD\tnbRotB\tTPSA\n")
+    output.write("#logP molMR molW nbA nbD nbRotB TPSA countedAtomPairs...\n")
     for name, mol in RobustSmilesMolSupplier(input_smi):
         if mol is None:
             continue
@@ -38,8 +39,14 @@ def main():
         nbRotB = Descriptors.NumRotatableBonds(mol)
         tpsa = Descriptors.TPSA(mol)
         # FBR: TODO append counted atom pairs
-        output.write("%f\t%f\t%f\t%d\t%d\t%d\t%f\n" %
+        output.write("0:%f 1:%f 2:%f 3:%d 4:%d 5:%d 6:%f" %
                      (logP, molMR, molW, nbA, nbD, nbRotB, tpsa))
+        offset = 7
+        countedFp = Pairs.GetAtomPairFingerprint(mol)
+        countedFp = countedFp.GetNonzeroElements()
+        for index, count in countedFp.items():
+            output.write(" %d:%d" % (index + offset, count))
+        output.write("\n")
     output.close()
 
 if __name__ == '__main__':
